@@ -13,7 +13,7 @@ const Store = (() => {
     // slots: AM = breakfast (~8 AM), PM = dinner (~7 PM), DAY = once daily (time not set), PRN = as needed
     meds: [
       { id: 'prednisone', name: 'Prednisone', dose: '20mg 1.5 tablets', slots: ['DAY'], start: '', end: '' },
-      { id: 'transform', name: 'Transform', dose: '50mg 2 tablets (twice daily)', slots: ['AM', 'PM'], start: '', end: '' },
+      { id: 'transform', name: 'Trazodone', dose: '50mg 2 tablets (twice daily)', slots: ['AM', 'PM'], start: '', end: '' },
       { id: 'metronidazole', name: 'Metronidazole', dose: '250mg 1 tablet (twice daily)', slots: ['AM', 'PM'], start: '', end: '' },
       { id: 'probiotic', name: 'Provable Probiotic sprinkle capsules', dose: '', slots: ['DAY'], start: '', end: '' },
       { id: 'fiber', name: 'Provable fiber supplement', dose: '', slots: ['DAY'], start: '', end: '' },
@@ -67,7 +67,12 @@ const Store = (() => {
   }
   const day = date => (st.records['day:' + date] || {}).d || {};
   const setDay = (date, f, v, o = {}) => setField('day:' + date, 'day', date, f, v, o.silent);
-  const cfg = () => Object.assign({}, DEFAULT_CFG, (st.records.cfg || {}).d || {});
+  const cfg = () => {
+    const c = Object.assign({}, DEFAULT_CFG, (st.records.cfg || {}).d || {});
+    // correction: med was mis-entered as "Transform"; it is Trazodone (id kept so earlier ticks still match)
+    c.meds = (c.meds || []).map(m => m.name === 'Transform' ? Object.assign({}, m, { name: 'Trazodone' }) : m);
+    return c;
+  };
   const setCfg = (f, v) => setField('cfg', 'cfg', '', f, v, false);
   const allDays = () => Object.values(st.records).filter(r => r.type === 'day' && !r.del);
 
