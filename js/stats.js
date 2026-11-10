@@ -38,6 +38,32 @@ const Stats = (() => {
       || Object.values(days[date] || {}).some(v => v != null && v !== ''));
     D.effFood = date => (days[date] && days[date].food != null) ? days[date].food : cfg.food;
 
+    // ---- medications: per-dose ticks live in the day record as 'med:<id>:<slot>' = {by,time} | null
+    D.meds = cfg.meds || [];
+    const medDates = Object.keys(days).filter(d => Object.keys(days[d]).some(k => k.startsWith('med:') && days[d][k])).sort();
+    D.medStart = medDates[0] || null; // adherence is counted from the first day any dose was ticked
+    D.medGiven = (date, id, slot) => (days[date] || {})['med:' + id + ':' + slot] || null;
+    D.medActive = (m, date) => (!m.start || date >= m.start) && (!m.end || date <= m.end);
+    D.medRows = () => {
+      const out = [];
+      if (!D.medStart) return out;
+      for (let d = D.medStart; d <= today; d = U.add(d, 1))
+        D.meds.forEach(m => (m.slots || []).forEach(slot => {
+          if (!D.medActive(m, d)) return;
+          const v = D.medGiven(d, m.id, slot);
+          if (slot === 'PRN' && !v) return;
+          out.push({ date: d, id: m.id, name: m.name, dose: m.dose, slot, given: !!v, pending: !v && d === today, by: v && v.by, time: v && v.time });
+        }));
+      return out;
+    };
+    D.medSummary = () => {
+      const rows = D.medRows().filter(r => r.date < today); // completed days only
+      return D.meds.map(m => {
+        const r = rows.filter(x => x.id === m.id), sched = r.filter(x => x.slot !== 'PRN');
+        return { m, exp: sched.length, given: sched.filter(x => x.given).length, prn: r.filter(x => x.slot === 'PRN').length, missed: sched.filter(x => !x.given) };
+      });
+    };
+
     // consecutive days (ending today, or yesterday if nothing logged yet today) with ≥1 stool and none liquid (≤2)
     D.streak = () => {
       let d = today, c = 0;

@@ -6,12 +6,14 @@ const Exporter = (() => {
 
   function tables(D) {
     const dates = [...new Set([...Object.keys(D.days), ...D.stools.map(s => s.date), ...D.vomits.map(v => v.date), ...D.weights.map(w => w.date)])].sort();
-    const daily = [['Date', 'Trial day', 'Food fed', 'Amount', 'Wet/Dry', 'Treats', 'Non-approved foods', 'Meds/supplements', 'Appetite (1-5)', 'Energy (1-5)', 'Nausea (1-5)', 'Gas (1-5)', 'Abdominal discomfort (1-5)', 'Good day?', 'Stool count', 'Avg stool score', 'Min stool', 'Max stool', 'Vomiting episodes', 'Weight (' + D.cfg.unit + ')', 'Notes']];
+    const daily = [['Date', 'Trial day', 'Food fed', 'Amount', 'Wet/Dry', 'Treats', 'Non-approved foods', 'Meds/supplements', 'Appetite (1-5)', 'Energy (1-5)', 'Nausea (1-5)', 'Gas (1-5)', 'Abdominal discomfort (1-5)', 'Good day?', 'Stool count', 'Avg stool score', 'Min stool', 'Max stool', 'Vomiting episodes', 'Weight (' + D.cfg.unit + ')', 'Notes', 'Meds given', 'Meds not given']];
+    const mr = D.medRows(), slotName = { AM: 'breakfast', PM: 'dinner', DAY: 'once daily', PRN: 'as needed' };
+    const mlist = (d, given) => mr.filter(r => r.date === d && r.given === given && !r.pending).map(r => r.name + ' (' + slotName[r.slot] + ')').join('; ');
     dates.forEach(d => {
       const x = D.days[d] || {}, s = (D.byDate[d] || []).map(a => a.score), w = D.wByDate[d] || [];
       daily.push([d, D.dayNumber(d), D.effFood(d), x.amount, x.form, x.treats, x.nonapproved, x.meds, x.appetite, x.energy, x.nausea, x.gas, x.discomfort, yn(x.good),
         s.length, s.length ? U.n1(U.mean(s), 2) : '', s.length ? Math.min(...s) : '', s.length ? Math.max(...s) : '', (D.vByDate[d] || []).length,
-        w.length ? U.n1(w[w.length - 1].v, 1) : '', x.notes]);
+        w.length ? U.n1(w[w.length - 1].v, 1) : '', x.notes, mlist(d, true), mlist(d, false)]);
     });
     const stools = [['Date', 'Time', 'Score (1-7)', 'Description', 'Urgency', 'Mucus', 'Blood', 'Color', 'Notes', 'Logged by']];
     D.stools.forEach(s => stools.push([s.date, s.time, s.score, SCALE_NAME[s.score], s.urgency, yn(!!s.mucus), yn(!!s.blood), s.color, s.notes, s.by]));
@@ -19,7 +21,9 @@ const Exporter = (() => {
     D.vomits.forEach(v => vom.push([v.date, v.time, v.notes, v.by]));
     const wt = [['Date', 'Time', 'Weight (' + D.cfg.unit + ')']];
     D.weights.forEach(w => wt.push([w.date, w.time, U.n1(w.v, 1)]));
-    return { Daily: daily, Stools: stools, Vomiting: vom, Weights: wt };
+    const med = [['Date', 'Medication', 'Dose', 'Slot', 'Given?', 'Given by', 'Time']];
+    mr.forEach(r => med.push([r.date, r.name, r.dose, slotName[r.slot], r.given ? 'yes' : r.pending ? 'pending' : 'no', r.by, r.time ? U.t12(r.time) : '']));
+    return { Daily: daily, Stools: stools, Vomiting: vom, Weights: wt, Medications: med };
   }
 
   function download(name, text, type) {

@@ -9,7 +9,16 @@
  */
 const Store = (() => {
   const KEY = 'oakley.data.v1', LKEY = 'oakley.local.v1';
-  const DEFAULT_CFG = { dog: 'Oakley', start: null, len: 30, food: 'Rachel Ray Nutrish Chicken', unit: 'lb' };
+  const DEFAULT_CFG = { dog: 'Oakley', start: null, len: 30, food: 'Rachel Ray Nutrish Chicken', unit: 'lb',
+    // slots: AM = breakfast (~8 AM), PM = dinner (~7 PM), DAY = once daily (time not set), PRN = as needed
+    meds: [
+      { id: 'prednisone', name: 'Prednisone', dose: '20mg 1.5 tablets', slots: ['DAY'], start: '', end: '' },
+      { id: 'transform', name: 'Transform', dose: '50mg 2 tablets (twice daily)', slots: ['AM', 'PM'], start: '', end: '' },
+      { id: 'metronidazole', name: 'Metronidazole', dose: '250mg 1 tablet (twice daily)', slots: ['AM', 'PM'], start: '', end: '' },
+      { id: 'probiotic', name: 'Provable Probiotic sprinkle capsules', dose: '', slots: ['DAY'], start: '', end: '' },
+      { id: 'fiber', name: 'Provable fiber supplement', dose: '', slots: ['DAY'], start: '', end: '' },
+      { id: 'kelp', name: 'Sea kelp dental supplement', dose: '', slots: ['DAY'], start: '', end: '' }
+    ] };
   let st = { records: {}, dirty: {} };
   let local = { user: '', url: '', token: '', theme: 'auto', lastSync: 0 };
   const listeners = [];

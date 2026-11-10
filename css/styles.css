@@ -106,3 +106,11 @@ textarea { resize: vertical; }
   main { max-width: none; padding: 0; } .report { border: 0; padding: 0; } .two { grid-template-columns: 1fr 1fr; } h2, h3 { break-after: avoid; } table, .chart { break-inside: avoid; } tr { break-inside: avoid; }
   .verdict { border: 1px solid #999; background: #fff !important; color: #000 !important; }
 }
+
+/* medications checklist */
+.medgrp h3 { margin: 14px 0 6px; color: var(--muted); font-size: 14px; }
+.medrow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 12px; margin-bottom: 8px; border-radius: 14px; border: 2px solid var(--line); background: var(--bg); color: var(--text); font: inherit; text-align: left; }
+.medrow .grow { display: grid; } .medrow small { color: var(--muted); }
+.medrow .chk { width: 32px; height: 32px; border-radius: 9px; border: 2px solid var(--muted); display: grid; place-items: center; font-size: 22px; font-weight: 800; flex: none; }
+.medrow.on { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--bg)); } .medrow.on .chk { background: var(--good); border-color: var(--good); color: #fff; } .medrow .who { white-space: nowrap; }
+.medcfg { border-top: 1px solid var(--line); padding: 8px 0 12px; margin-top: 8px; }

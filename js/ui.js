@@ -65,6 +65,25 @@ const UI = (() => {
         h('button', { class: 'btn primary', onclick: () => { Store.update(id, d); close(); } }, 'Save'))));
   }
 
+  // ---------- medications checklist (Log tab)
+  const SLOTS = [['AM', '☀️ Breakfast (~8 AM)'], ['PM', '🌙 Dinner (~7 PM)'], ['DAY', 'Once daily'], ['PRN', 'As needed']];
+  function medsCard(D, date, day, user, isToday) {
+    const groups = SLOTS.map(([slot, label]) => {
+      const items = D.meds.filter(m => (m.slots || []).includes(slot) && D.medActive(m, date));
+      return items.length ? { slot, label, items } : null;
+    }).filter(Boolean);
+    let exp = 0, got = 0;
+    groups.filter(g => g.slot !== 'PRN').forEach(g => g.items.forEach(m => { exp++; if (day['med:' + m.id + ':' + g.slot]) got++; }));
+    return card('💊 Medications & supplements' + (exp ? ` · ${got}/${exp} given` : ''),
+      groups.length ? groups.map(g => h('div', { class: 'medgrp' }, h('h3', {}, g.label), g.items.map(m => {
+        const key = 'med:' + m.id + ':' + g.slot, v = day[key];
+        return h('button', { class: 'medrow' + (v ? ' on' : ''), onclick: () => Store.setDay(date, key, v ? null : { by: user, time: isToday ? U.nowTime() : '' }) },
+          h('span', { class: 'chk' }, v ? '✓' : ''),
+          h('span', { class: 'grow' }, h('b', {}, m.name), m.dose ? h('small', {}, m.dose) : null),
+          v ? h('small', { class: 'who' }, (v.by || '') + (v.time ? ' · ' + U.t12(v.time) : '')) : null);
+      }))) : h('p', { class: 'muted' }, 'No medications set up for this day. Add them under More → Medications.'));
+  }
+
   // ---------- LOG view
   const RATINGS = [
     ['appetite', 'Appetite', '1 none · 5 eager'], ['energy', 'Energy', '1 lethargic · 5 normal'],
@@ -112,6 +131,8 @@ const UI = (() => {
         s.urgency ? h('span', { class: 'tag' }, 'urg ' + s.urgency) : null, s.mucus ? h('span', { class: 'tag warn' }, 'mucus') : null, s.blood ? h('span', { class: 'tag bad' }, 'blood') : null,
         s.color || s.notes ? h('span', { class: 'tag' }, '✎') : null))) : h('p', { class: 'muted' }, 'No stools logged for this day.')));
 
+    root.append(medsCard(D, date, day, user, isToday));
+
     // good day
     root.append(card('Was this a good day?', h('div', { class: 'seg big' },
       h('button', { class: day.good === true ? 'on yes' : '', onclick: () => Store.setDay(date, 'good', day.good === true ? null : true) }, '👍 Yes'),
@@ -146,7 +167,7 @@ const UI = (() => {
       txt('food', 'Food fed', 'Rachel Ray Nutrish Chicken'), txt('amount', 'Amount fed', 'e.g. 1 cup AM + 1 cup PM'),
       h('div', { class: 'field' }, h('span', {}, 'Wet or dry'), seg([['dry', 'Dry'], ['wet', 'Wet'], ['both', 'Both']], day.form || null, v => Store.setDay(date, 'form', v))),
       txt('treats', 'Treats given', 'what / how many', true), txt('nonapproved', 'Non-approved foods eaten', 'table scraps, stolen food…', true),
-      txt('meds', 'Medications / supplements', 'name + dose'), field('Notes', h('textarea', { rows: 2, value: day.notes || '', onchange: e => Store.setDay(date, 'notes', e.target.value.trim(), { silent: true }) }))));
+      txt('meds', 'Other meds / supplements (non-routine)', 'name + dose'), field('Notes', h('textarea', { rows: 2, value: day.notes || '', onchange: e => Store.setDay(date, 'notes', e.target.value.trim(), { silent: true }) }))));
     return root;
   }
 
@@ -247,6 +268,21 @@ const UI = (() => {
           (navigator.clipboard ? navigator.clipboard.writeText(cfgLink) : Promise.reject()).then(() => snack('Setup link copied — send it to Mary'), () => prompt('Copy this setup link:', cfgLink));
         } }, 'Copy setup link')), syncLine));
 
+    // medication list editor (shared; stored in the trial settings record)
+    const meds = (cfg.meds || []).map(m => Object.assign({}, m, { slots: [...(m.slots || [])] }));
+    const saveMeds = () => Store.setCfg('meds', meds);
+    root.append(card('Medications & supplements (shared)',
+      h('p', { class: 'muted small' }, 'Slots: Breakfast ≈ 8 AM, Dinner ≈ 7 PM, Once daily (no set time), As needed. Dates are optional; they limit when a dose is expected.'),
+      meds.map((m, i) => h('div', { class: 'medcfg' },
+        field('Name', h('input', { type: 'text', value: m.name, onchange: e => { m.name = e.target.value.trim(); saveMeds(); } })),
+        field('Dose', h('input', { type: 'text', value: m.dose || '', onchange: e => { m.dose = e.target.value.trim(); saveMeds(); } })),
+        h('div', { class: 'chips' }, SLOTS.map(([s, l]) => toggle(l.replace(/ \(.*\)/, '').replace('☀️ ', '').replace('🌙 ', ''), m.slots.includes(s),
+          on => { m.slots = on ? [...m.slots, s] : m.slots.filter(x => x !== s); saveMeds(); }))),
+        h('div', { class: 'two' }, field('Start date', h('input', { type: 'date', value: m.start || '', onchange: e => { m.start = e.target.value; saveMeds(); } })),
+          field('End date', h('input', { type: 'date', value: m.end || '', onchange: e => { m.end = e.target.value; saveMeds(); } }))),
+        h('button', { class: 'btn danger small', onclick: () => { if (confirm('Remove ' + m.name + '? Past ticks stay in the data but leave the checklist and report.')) { meds.splice(i, 1); saveMeds(); } } }, 'Remove'))),
+      h('button', { class: 'btn wide', onclick: () => { meds.push({ id: 'm' + U.uid(), name: 'New medication', dose: '', slots: ['AM'], start: '', end: '' }); saveMeds(); } }, '＋ Add medication or supplement')));
+
     root.append(card('Trial settings (shared)',
       field('Dog name', h('input', { type: 'text', value: cfg.dog, onchange: e => Store.setCfg('dog', e.target.value.trim() || 'Oakley') })),
       field('Trial start date (Day 1)', h('input', { type: 'date', value: cfg.start || '', onchange: e => Store.setCfg('start', e.target.value || null) })),
@@ -280,6 +316,15 @@ const UI = (() => {
       h('div', { class: 'two' }, h('div', {}, h('h3', {}, 'Stool score'), Charts.stool(D)), h('div', {}, h('h3', {}, 'Weight (' + cfg.unit + ')'), Charts.weight(D))),
       h('div', { class: 'two' }, h('div', {}, h('h3', {}, 'Appetite'), Charts.rating(D, 'appetite', 'Appetite', 'c2')), h('div', {}, h('h3', {}, 'Energy'), Charts.rating(D, 'energy', 'Energy', 'c4'))));
 
+    const ms = D.medSummary().filter(r => r.exp || r.prn);
+    root.append(h('h2', {}, 'Medications & supplements'),
+      D.medStart ? h('div', {},
+        h('p', { class: 'muted small' }, `Dose checklist kept since ${D.medStart}. Adherence = doses ticked as given ÷ doses scheduled, completed days only (through yesterday).`),
+        tbl(['Medication', 'Dose', 'Schedule', 'Given / scheduled', 'Adherence'], ms.map(r => [r.m.name, r.m.dose || '',
+          (r.m.slots || []).map(s => ({ AM: 'breakfast', PM: 'dinner', DAY: 'once daily', PRN: 'as needed' }[s])).join(' + '),
+          r.exp ? `${r.given} / ${r.exp}` : `${r.prn} given (as needed)`, r.exp ? p(100 * r.given / r.exp) : '–'])),
+        (() => { const missed = ms.flatMap(r => r.missed.map(x => [x.date, r.m.name, { AM: 'breakfast', PM: 'dinner', DAY: 'once daily' }[x.slot]])); return missed.length ? h('div', {}, h('h3', {}, 'Doses not ticked'), tbl(['Date', 'Medication', 'Slot'], missed)) : h('p', {}, 'No missed doses recorded.'); })())
+        : h('p', {}, 'No doses checked off yet.'));
     const dev = Object.keys(D.days).sort().filter(d => { const x = D.days[d]; return (x.treats && x.treats !== 'None') || (x.nonapproved && x.nonapproved !== 'None') || (x.meds && x.meds !== 'None'); });
     root.append(h('h2', {}, 'Diet adherence, treats & medications'),
       dev.length ? tbl(['Date', 'Treats', 'Non-approved foods', 'Meds / supplements'], dev.map(d => [d, D.days[d].treats || '', D.days[d].nonapproved || '', D.days[d].meds || '']))
