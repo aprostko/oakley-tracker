@@ -32,6 +32,8 @@ const UI = (() => {
   function editStool(id, defaults) {
     const rec = id && Store.get(id);
     const d = Object.assign({ time: U.nowTime(), score: null, urgency: null, mucus: false, blood: false, color: '', notes: '' }, rec ? rec.d : defaults);
+    if (rec && rec.d.sv !== 2 && d.score) d.score = 8 - d.score; // legacy record → new direction on first edit
+    d.sv = 2;
     let close;
     const body = h('div', { class: 'stack' });
     const draw = () => body.replaceChildren(
@@ -114,7 +116,7 @@ const UI = (() => {
     const stoolsToday = D.byDate[date] || [];
     const quick = n => {
       const time = q.time || (isToday ? U.nowTime() : '12:00');
-      const id = Store.add('stool', date, { time, score: n, urgency: q.urg, mucus: q.mucus, blood: q.blood, color: '', notes: '', by: user });
+      const id = Store.add('stool', date, { sv: 2, time, score: n, urgency: q.urg, mucus: q.mucus, blood: q.blood, color: '', notes: '', by: user });
       Object.assign(q, { urg: null, mucus: false, blood: false, time: null });
       snack(`Logged ${n} · ${SCALE_NAME[n]} · ${U.t12(time)}`, [{ label: 'Details', fn: () => editStool(id) }, { label: 'Undo', fn: () => Store.remove(id) }]);
     };
@@ -179,14 +181,14 @@ const UI = (() => {
     const root = h('div', { class: 'stack' });
     root.append(card('Current trend — average stool score',
       h('div', { class: 'stats three' }, [7, 14, 30].map(k => stat('Last ' + k + ' days', U.n1(avg(k)), D.rangeStools(k).length + ' stools'))),
-      h('p', { class: 'muted small' }, 'Target is 4–5. Under 3 = liquid.')));
+      h('p', { class: 'muted small' }, 'Higher = softer. Normal is 3–4; 6–7 = liquid.')));
     root.append(h('div', { class: 'stats grid' },
       stat('Days without liquid stool', D.streak(), 'consecutive', D.streak() >= 3 ? 'good' : ''),
       stat('Average stool score', U.n1(allAvg), D.stools.length + ' stools total'),
       stat('Best stool', best ? best.score : '–', best ? SCALE_NAME[best.score] + ' · ' + U.short(best.date) : ''),
       stat('Worst stool', worst ? worst.score : '–', worst ? SCALE_NAME[worst.score] + ' · ' + U.short(worst.date) : ''),
       stat('Vomiting incidents', D.vomits.length, 'total', D.vomits.length ? 'warn' : '')));
-    root.append(card('Stool score over time', Charts.stool(D), h('p', { class: 'legend small muted' }, 'Line = daily average · faint dots = each stool · green band = normal (4–5) · red band = liquid (1–2)')));
+    root.append(card('Stool score over time', Charts.stool(D), h('p', { class: 'legend small muted' }, 'Line = daily average · faint dots = each stool · green band = normal (3–4) · red band = liquid (6–7)')));
     root.append(h('div', { class: 'two' }, card('Appetite', Charts.rating(D, 'appetite', 'Appetite over time', 'c2')), card('Energy', Charts.rating(D, 'energy', 'Energy over time', 'c4'))));
     root.append(card('Weight (' + D.cfg.unit + ')', Charts.weight(D)));
     return root;
@@ -198,7 +200,7 @@ const UI = (() => {
     if (!O.ready) return h('div', {}, h('div', { class: 'verdict warn' }, h('b', {}, 'Not enough data yet')), h('p', { class: 'muted' }, O.reason));
     const T = O.T, u = U.n1, p = U.pct, w1 = O.w1, rc = O.rc;
     const rows = [
-      ['Avg stool score', u(w1.avg), u(rc.avg), T.stool], ['Formed stools (4–5)', p(w1.formed), p(rc.formed), T.formed], ['Liquid stools (1–2)', p(w1.liquid), p(rc.liquid), T.liquid],
+      ['Avg stool score', u(w1.avg), u(rc.avg), T.stool], ['Formed stools (3–4)', p(w1.formed), p(rc.formed), T.formed], ['Liquid stools (6–7)', p(w1.liquid), p(rc.liquid), T.liquid],
       ['Stools per day', u(w1.perDay), u(rc.perDay), T.perDay], ['Appetite (1–5)', u(w1.appetite), u(rc.appetite), T.appetite], ['Energy (1–5)', u(w1.energy), u(rc.energy), T.energy],
       ['Nausea (1–5)', u(w1.nausea), u(rc.nausea), T.nausea], ['Gas (1–5)', u(w1.gas), u(rc.gas), T.gas], ['Discomfort (1–5)', u(w1.discomfort), u(rc.discomfort), T.discomfort],
       ['Vomiting / 7 days', u(w1.vomit7), u(rc.vomit7), T.vomit], ['Good days', p(w1.good), p(rc.good), T.good],
@@ -208,7 +210,7 @@ const UI = (() => {
       h('div', { class: 'tablewrap' }, h('table', { class: 'tbl' },
         h('thead', {}, h('tr', {}, h('th', {}, 'Measure'), h('th', {}, 'Week 1'), h('th', {}, 'Latest 7d'), h('th', {}, 'Trend'))),
         h('tbody', {}, rows.map(r => h('tr', {}, h('td', {}, r[0]), h('td', {}, r[1]), h('td', {}, r[2]), h('td', { class: 'tr ' + r[3] }, (ARROW[r[3]] || '') + ' ' + r[3])))))),
-      h('p', { class: 'muted small' }, 'Stool "improvement %" = reduction in average distance from the normal range (scores 4–5), so it works whether loose or hard stools are the problem. Owner-recorded observations for discussion with your veterinarian — not a diagnosis.'));
+      h('p', { class: 'muted small' }, 'Stool "improvement %" = reduction in average distance from the normal range (scores 3–4), so it works whether loose or hard stools are the problem. Owner-recorded observations for discussion with your veterinarian — not a diagnosis.'));
   }
   function viewOutcome() {
     const D = Stats.build();
@@ -332,7 +334,7 @@ const UI = (() => {
     root.append(h('h2', {}, 'Vomiting log'), D.vomits.length ? tbl(['Date', 'Time', 'Notes'], D.vomits.map(v => [v.date, U.t12(v.time), v.notes || ''])) : h('p', {}, 'None recorded.'));
     root.append(h('h2', {}, 'Stool log'), D.stools.length ? tbl(['Date', 'Time', 'Score', 'Urgency', 'Mucus', 'Blood', 'Color', 'Notes'],
       D.stools.map(s => [s.date, U.t12(s.time), s.score + ' ' + SCALE_NAME[s.score], s.urgency || '', s.mucus ? 'yes' : '', s.blood ? 'YES' : '', s.color || '', s.notes || ''])) : h('p', {}, 'None recorded.'));
-    root.append(h('p', { class: 'muted small' }, 'Stool scale: 1 completely liquid · 2 mostly liquid · 3 pudding · 4 soft formed · 5 normal formed · 6 firm · 7 overly hard. Ratings 1–5. Owner observations; not a diagnosis.'));
+    root.append(h('p', { class: 'muted small' }, 'Stool scale (higher = softer): 1 overly hard · 2 firm · 3 normal formed · 4 soft formed · 5 pudding · 6 mostly liquid · 7 completely liquid. Ratings 1–5. Owner observations; not a diagnosis.'));
     return root;
   }
 

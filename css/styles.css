@@ -1,8 +1,8 @@
 :root {
   --bg: #f4f6f5; --card: #fff; --text: #17201d; --muted: #5c6b66; --line: #dde4e1; --accent: #1f6f5c; --accent-t: #fff;
   --good: #2f9e44; --bad: #c92a2a; --warn: #d9730d; --soft: #eaf1ee;
-  --s1: #b42318; --s2: #e8590c; --s3: #f2b01e; --s4: #8fc13f; --s5: #2f9e44; --s6: #3b8ed8; --s7: #6d4fc7;
-  --on3: #1b1b1b; --on4: #1b1b1b;
+  --s1: #6d4fc7; --s2: #3b8ed8; --s3: #2f9e44; --s4: #8fc13f; --s5: #f2b01e; --s6: #e8590c; --s7: #b42318;
+  --on4: #1b1b1b; --on5: #1b1b1b;
   --c1: #1f6f5c; --c2: #d9730d; --c3: #3b6fd8; --c4: #8a4fc7; --cf: #8aa19a;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme=light]) { --bg: #0f1514; --card: #182120; --text: #e7efec; --muted: #9bb0aa; --line: #2b3835; --accent: #4cc2a0; --accent-t: #072019; --soft: #202d2a; --c1: #4cc2a0; --c2: #f0a040; --c3: #7fa6ff; --c4: #c39bf0; --cf: #7d948d; } }
@@ -50,8 +50,8 @@ textarea { resize: vertical; }
 .scale { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .sbtn { min-height: 74px; border-radius: 14px; border: 2px solid transparent; color: #fff; font: inherit; display: grid; place-content: center; gap: 0; padding: 4px; }
 .sbtn b { font-size: 28px; line-height: 1.1; } .sbtn small { font-size: 12px; line-height: 1.1; opacity: .95; }
-.sbtn.s1, .badge.s1 { background: var(--s1); } .s2.sbtn, .badge.s2 { background: var(--s2); } .s3.sbtn, .badge.s3 { background: var(--s3); color: var(--on3); }
-.s4.sbtn, .badge.s4 { background: var(--s4); color: var(--on4); } .s5.sbtn, .badge.s5 { background: var(--s5); } .s6.sbtn, .badge.s6 { background: var(--s6); } .s7.sbtn, .badge.s7 { background: var(--s7); }
+.sbtn.s1, .badge.s1 { background: var(--s1); } .s2.sbtn, .badge.s2 { background: var(--s2); } .s3.sbtn, .badge.s3 { background: var(--s3); }
+.s4.sbtn, .badge.s4 { background: var(--s4); color: var(--on4); } .s5.sbtn, .badge.s5 { background: var(--s5); color: var(--on5); } .s6.sbtn, .badge.s6 { background: var(--s6); } .s7.sbtn, .badge.s7 { background: var(--s7); }
 .sbtn.sel { outline: 4px solid var(--text); outline-offset: 1px; } .sbtn:active { transform: scale(.96); }
 .sbtn.more { background: var(--soft); color: var(--text); border: 1px dashed var(--muted); }
 .badge { display: inline-grid; place-items: center; min-width: 30px; height: 30px; border-radius: 9px; font-weight: 800; color: #fff; }

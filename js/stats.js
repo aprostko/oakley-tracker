@@ -1,18 +1,20 @@
 /* Derived statistics. Pure functions over Store data. */
+// Scale direction: higher = softer. (Scale v2; records without sv:2 were logged on the old 1=liquid..7=hard scale and are flipped on read.)
 const SCALE = [
-  [1, 'Liquid'], [2, 'Mostly liquid'], [3, 'Pudding'], [4, 'Soft formed'], [5, 'Normal'], [6, 'Firm'], [7, 'Too hard']
+  [1, 'Too hard'], [2, 'Firm'], [3, 'Normal'], [4, 'Soft formed'], [5, 'Pudding'], [6, 'Mostly liquid'], [7, 'Liquid']
 ];
+const NORMAL_LO = 3, NORMAL_HI = 4, LIQUID_MIN = 6, SCALE_CENTER = 3.5;
 const SCALE_NAME = Object.fromEntries(SCALE);
 const LBS = 2.20462;
 
 const Stats = (() => {
-  // Distance from the "normal" band (4–5). 0 = in band; liquid = 3.
-  const dev = s => s < 4 ? 4 - s : s > 5 ? s - 5 : 0;
+  // Distance from the "normal" band (3–4). 0 = in band; liquid (7) = 3.
+  const dev = s => s < NORMAL_LO ? NORMAL_LO - s : s > NORMAL_HI ? s - NORMAL_HI : 0;
   const KEYS = ['appetite', 'energy', 'nausea', 'gas', 'discomfort'];
 
   function build() {
     const cfg = Store.cfg(), today = U.today();
-    const stools = Store.list('stool').map(r => ({ id: r.id, date: r.date, ...r.d })).filter(s => s.score)
+    const stools = Store.list('stool').map(r => ({ id: r.id, date: r.date, ...r.d, score: r.d.sv === 2 ? r.d.score : 8 - r.d.score })).filter(s => s.score)
       .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
     const vomits = Store.list('vomit').map(r => ({ id: r.id, date: r.date, ...r.d }))
       .sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || '')));
@@ -64,19 +66,19 @@ const Stats = (() => {
       });
     };
 
-    // consecutive days (ending today, or yesterday if nothing logged yet today) with ≥1 stool and none liquid (≤2)
+    // consecutive days (ending today, or yesterday if nothing logged yet today) with ≥1 stool and none liquid (≥6)
     D.streak = () => {
       let d = today, c = 0;
       if (!(byDate[d] || []).length) d = U.add(d, -1);
       while (d >= start) {
         const s = byDate[d];
-        if (!s || !s.length || s.some(x => x.score <= 2)) break;
+        if (!s || !s.length || s.some(x => x.score >= LIQUID_MIN)) break;
         c++; d = U.add(d, -1);
       }
       return c;
     };
-    D.best = () => stools.length ? stools.reduce((b, s) => dev(s.score) < dev(b.score) || (dev(s.score) === dev(b.score) && Math.abs(s.score - 4.5) < Math.abs(b.score - 4.5)) ? s : b) : null;
-    D.worst = () => stools.length ? stools.reduce((w, s) => dev(s.score) > dev(w.score) || (dev(s.score) === dev(w.score) && Math.abs(s.score - 4.5) > Math.abs(w.score - 4.5)) ? s : w) : null;
+    D.best = () => stools.length ? stools.reduce((b, s) => dev(s.score) < dev(b.score) || (dev(s.score) === dev(b.score) && Math.abs(s.score - SCALE_CENTER) < Math.abs(b.score - SCALE_CENTER)) ? s : b) : null;
+    D.worst = () => stools.length ? stools.reduce((w, s) => dev(s.score) > dev(w.score) || (dev(s.score) === dev(w.score) && Math.abs(s.score - SCALE_CENTER) > Math.abs(w.score - SCALE_CENTER)) ? s : w) : null;
     D.metrics = dates => metrics(D, dates);
     D.outcome = () => outcome(D);
     D.chartDomain = () => {
@@ -93,8 +95,8 @@ const Stats = (() => {
     const o = {
       dates, stools: st.length, logged,
       avg: U.mean(sc),
-      formed: sc.length ? 100 * sc.filter(s => s >= 4 && s <= 5).length / sc.length : null,
-      liquid: sc.length ? 100 * sc.filter(s => s <= 2).length / sc.length : null,
+      formed: sc.length ? 100 * sc.filter(s => s >= NORMAL_LO && s <= NORMAL_HI).length / sc.length : null,
+      liquid: sc.length ? 100 * sc.filter(s => s >= LIQUID_MIN).length / sc.length : null,
       mdev: sc.length ? U.mean(sc.map(dev)) : null,
       perDay: logged ? st.length / logged : null,
       vomit: dates.reduce((a, d) => a + (D.vByDate[d] || []).length, 0)

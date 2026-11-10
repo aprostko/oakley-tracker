@@ -33,7 +33,7 @@ const Charts = (() => {
     const [a, b] = D.chartDomain();
     return line({
       label: 'Stool score over time', x: [a, b], y: [0.5, 7.5], ticks: [1, 2, 3, 4, 5, 6, 7],
-      bands: [{ from: 3.5, to: 5.5, cls: 'good' }, { from: 0.5, to: 2.5, cls: 'bad' }],
+      bands: [{ from: 2.5, to: 4.5, cls: 'good' }, { from: 5.5, to: 7.5, cls: 'bad' }],
       series: [
         { cls: 'c-faint', faint: true, r: 2.5, points: D.stools.map(s => ({ date: s.date, y: s.score, title: `${U.short(s.date)} ${U.t12(s.time)}: ${s.score} (${SCALE_NAME[s.score]})` })) },
         { cls: 'c1', line: true, points: [...new Set(D.stools.map(s => s.date))].map(d => ({ date: d, y: D.dayAvg(d), title: `${U.short(d)} daily average: ${U.n1(D.dayAvg(d))}` })) }]

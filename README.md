@@ -66,10 +66,10 @@ After editing `Code.gs` later, use Deploy ▸ Manage deployments ▸ new version
 1. Local-first store + PWA shell. 2. Log tab: tap-to-log stool (score tap = saved with time, optional urgency/mucus/blood set beforehand; ≈2 taps), details editor, **"Was this a good day?" 👍/👎**, 1–5 ratings (appetite, energy, nausea, gas, discomfort), vomiting episodes, weights, diet/treats/non-approved/meds/notes. 3. Dashboard (7/14/30-day averages, streak, best/worst, vomiting, 4 charts). 4. Outcome tab (auto summary + Week 1 vs latest-7-days table, verdict). 5. Timeline with week filter. 6. Exports (stools CSV, daily CSV, Excel workbook with 4 sheets, JSON backup/restore) + printable vet summary. 7. Google Sheet sync. 8. Dark mode (auto/light/dark).
 
 **Definitions used (state these to your vet):**
-- Liquid stool = score ≤ 2. Normal/"formed" = 4–5.
-- *Days without liquid stool*: consecutive days (back from today; today skipped if nothing logged yet) with ≥1 stool logged and none ≤ 2. A day with no stool logged ends the streak.
-- *Best/worst stool*: closest to / furthest from the 4–5 band (so a 7 is not "best").
-- *Improvement %*: reduction in mean distance from the 4–5 band, Week 1 (trial days 1–7) vs the latest 7 trial days. Unlocks on day 10 with ≥3 stools in each window. Verdict is a simple rule on that figure (≥10% better/worse) plus flags for worsening appetite, energy, nausea, gas, discomfort, vomiting, good days. It is a summary, not a diagnosis.
+- Scale is **higher = softer**: 1 overly hard · 2 firm · 3 normal formed · 4 soft formed · 5 pudding · 6 mostly liquid · 7 liquid. Liquid stool = score ≥ 6. Normal/"formed" = 3–4. (Stools logged before scale v2 have no `sv:2` marker and are flipped on read, so old data stays correct.)
+- *Days without liquid stool*: consecutive days (back from today; today skipped if nothing logged yet) with ≥1 stool logged and none ≥ 6. A day with no stool logged ends the streak.
+- *Best/worst stool*: closest to / furthest from the 3–4 band (so a 1 is not "best").
+- *Improvement %*: reduction in mean distance from the 3–4 band, Week 1 (trial days 1–7) vs the latest 7 trial days. Unlocks on day 10 with ≥3 stools in each window. Verdict is a simple rule on that figure (≥10% better/worse) plus flags for worsening appetite, energy, nausea, gas, discomfort, vomiting, good days. It is a summary, not a diagnosis.
 - Weight is converted to your chosen unit (lb/kg) if entries differ.
 
 **Known limits:** concurrent edits to the *same field* are last-write-wins; the Apps Script URL+token is a shared secret (anyone with both can read/write the sheet) — don't post the setup link publicly; localStorage can be cleared by the browser if a phone is very low on storage (sync or JSON backup protects you); iOS may purge unused home-screen app data after long inactivity.

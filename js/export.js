@@ -15,7 +15,7 @@ const Exporter = (() => {
         s.length, s.length ? U.n1(U.mean(s), 2) : '', s.length ? Math.min(...s) : '', s.length ? Math.max(...s) : '', (D.vByDate[d] || []).length,
         w.length ? U.n1(w[w.length - 1].v, 1) : '', x.notes, mlist(d, true), mlist(d, false)]);
     });
-    const stools = [['Date', 'Time', 'Score (1-7)', 'Description', 'Urgency', 'Mucus', 'Blood', 'Color', 'Notes', 'Logged by']];
+    const stools = [['Date', 'Time', 'Score (1 hard … 7 liquid)', 'Description', 'Urgency', 'Mucus', 'Blood', 'Color', 'Notes', 'Logged by']];
     D.stools.forEach(s => stools.push([s.date, s.time, s.score, SCALE_NAME[s.score], s.urgency, yn(!!s.mucus), yn(!!s.blood), s.color, s.notes, s.by]));
     const vom = [['Date', 'Time', 'Notes', 'Logged by']];
     D.vomits.forEach(v => vom.push([v.date, v.time, v.notes, v.by]));
